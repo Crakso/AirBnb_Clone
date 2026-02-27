@@ -2,8 +2,10 @@ package com.neerajbisht.projects.AirBnB.service;
 
 import com.neerajbisht.projects.AirBnB.dto.HotelDTO;
 import com.neerajbisht.projects.AirBnB.entity.Hotel;
+import com.neerajbisht.projects.AirBnB.entity.Room;
 import com.neerajbisht.projects.AirBnB.exception.ResourceNotFoundException;
 import com.neerajbisht.projects.AirBnB.repository.HotelRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -16,6 +18,7 @@ public class HotelServiceImpl implements HotelService{
 
     private final HotelRepository hotelRepository;
     private final ModelMapper modelMapper;
+    private final InventoryService inventoryService;
 
     @Override
     public HotelDTO createNewHotel(HotelDTO hotelDTO) {
@@ -51,9 +54,29 @@ public class HotelServiceImpl implements HotelService{
     }
 
     @Override
-    public Boolean deleteHotelById(Long id) {
-        if(!hotelRepository.existsById(id)) throw new ResourceNotFoundException("Hotel not found with id: "+id);
+    @Transactional
+    public void deleteHotelById(Long id) {
+        Hotel hotel = hotelRepository.findById(id).orElseThrow(()->
+                new ResourceNotFoundException("Hotel not found with id: "+id));
         hotelRepository.deleteById(id);
-        return true;
+        for(Room room: hotel.getRooms()){
+            inventoryService.deleteFutureInventories(room);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void activateHotel(Long hotelId) {
+        log.info("Activating the hotel with Id: {}", hotelId);
+        Hotel hotel = hotelRepository
+                .findById(hotelId)
+                .orElseThrow(()->
+                        new ResourceNotFoundException("Hotel not found with Id: "+hotelId)
+                );
+        hotel.setActive(true);
+
+        for (Room room: hotel.getRooms()){
+            inventoryService.initializeRoomForYear(room);
+        }
     }
 }

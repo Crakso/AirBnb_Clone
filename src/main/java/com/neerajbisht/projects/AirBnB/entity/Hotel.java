@@ -1,17 +1,22 @@
 package com.neerajbisht.projects.AirBnB.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Getter
 @Setter
 @Table(name="hotel")
+@AllArgsConstructor
+@NoArgsConstructor
 public class Hotel {
 
     @Id
@@ -43,5 +48,8 @@ public class Hotel {
 
     @ManyToOne
     private User owner;
+
+    @OneToMany(mappedBy = "hotel")
+    private List<Room> rooms;
 
 }
